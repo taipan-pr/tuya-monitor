@@ -1,4 +1,5 @@
 import datetime
+import os
 
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
@@ -13,7 +14,9 @@ class InfluxDbClient:
 
     def write(self, data):
         dt = datetime.datetime.fromtimestamp(data['t'])
-        local_time = dt.replace(tzinfo=datetime.timezone(datetime.timedelta(hours=7)))
+        dt_offset = int(os.getenv('TIME_OFFSET_HOUR'))
+        local_time = dt.replace(tzinfo=datetime.timezone(datetime.timedelta(hours=dt_offset)))
+        print(local_time)
         p = influxdb_client \
             .Point(data['name']) \
             .field(data['type'], data['value']) \
