@@ -35,20 +35,17 @@ class PowerClamp(Device):
 
     def _process(self, data, func=None):
         try:
-            # See if any data is available
-            data = self.device.receive()
-
             if 't' not in data or data['dps'] is None:
                 return
 
             for key, value in data['dps'].items():
                 obj = {
+                    'name': 'PowerClamp',
                     't': data['t'],
                     'type': self.__get_dp_type(key),
                     'dp': key,
                     'value': value
                 }
-                print(obj)
 
                 if func is not None:
                     func(obj)

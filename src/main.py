@@ -1,15 +1,14 @@
 from powerclamp import *
-from rabbitmq import RabbitMq
 import os
 from dotenv import find_dotenv, load_dotenv
-
+from influxdbclient import InfluxDbClient
 
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
-queue = RabbitMq(os.getenv("RABBITMQ_HOST"), os.getenv("RABBITMQ_EXCHANGE_NAME"), os.getenv("RABBITMQ_QUEUE_NAME"))
+influxdb = InfluxDbClient(os.getenv("INFLUXDB_URL"), os.getenv("INFLUXDB_TOKEN"), os.getenv("INFLUXDB_ORG"), os.getenv("INFLUXDB_BUCKET"))
 # Power Clamp
 device = PowerClamp(os.getenv("TUYA_DEVICE_ID"), os.getenv("TUYA_LOCAL_KEY"), os.getenv("TUYA_DEVICE_IP"))
-device.listen(queue.publish)
+device.listen(influxdb.write)
 
 # from subbreaker import *
 #

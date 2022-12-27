@@ -18,14 +18,9 @@ class Device:
 
     def listen(self, func=None):
         while True:
-            try:
-                # See if any data is available
-                data = self.device.receive()
-                if data is None:
-                    continue
+            # See if any data is available
+            data = self.device.receive()
+            if data is None:
+                continue
 
-                self._process(data, func)
-
-            except:
-                self.device.close()
-                return
+            self._process(data, func)
