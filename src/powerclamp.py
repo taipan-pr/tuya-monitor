@@ -11,27 +11,48 @@ class PowerClamp(Device):
     @staticmethod
     def __get_dp_type(dp_key):
         match dp_key:
-            case '101': return 'VoltageA'
-            case '102': return 'CurrentA'
-            case '103': return 'ActivePowerA'
-            case '104': return 'PowerFactorA'
-            case '106': return 'EnergyConsumedA'
-            case '111': return 'VoltageB'
-            case '112': return 'CurrentB'
-            case '113': return 'ActivePowerB'
-            case '114': return 'PowerFactorB'
-            case '116': return 'EnergyConsumedB'
-            case '121': return 'VoltageC'
-            case '122': return 'CurrentC'
-            case '123': return 'ActivePowerC'
-            case '124': return 'PowerFactorC'
-            case '126': return 'EnergyConsumedC'
-            case '131': return 'TotalEnergyConsumed'
-            case '132': return 'TotalCurrent'
-            case '133': return 'TotalActivePower'
-            case '135': return 'Frequency'
-            case '136': return 'Temperature'
-            case _: return None
+            case '101':
+                return {'type': 'VoltageA', 'divider': 10}
+            case '102':
+                return {'type': 'CurrentA', 'divider': 1000}
+            case '103':
+                return {'type': 'ActivePowerA', 'divider': 1}
+            case '104':
+                return {'type': 'PowerFactorA', 'divider': 100}
+            case '106':
+                return {'type': 'EnergyConsumedA', 'divider': 100}
+            case '111':
+                return {'type': 'VoltageB', 'divider': 10}
+            case '112':
+                return {'type': 'CurrentB', 'divider': 1000}
+            case '113':
+                return {'type': 'ActivePowerB', 'divider': 1}
+            case '114':
+                return {'type': 'PowerFactorB', 'divider': 100}
+            case '116':
+                return {'type': 'EnergyConsumedB', 'divider': 100}
+            case '121':
+                return {'type': 'VoltageC', 'divider': 10}
+            case '122':
+                return {'type': 'CurrentC', 'divider': 1000}
+            case '123':
+                return {'type': 'ActivePowerC', 'divider': 1}
+            case '124':
+                return {'type': 'PowerFactorC', 'divider': 100}
+            case '126':
+                return {'type': 'EnergyConsumedC', 'divider': 100}
+            case '131':
+                return {'type': 'TotalEnergyConsumed', 'divider': 100}
+            case '132':
+                return {'type': 'TotalCurrent', 'divider': 1000}
+            case '133':
+                return {'type': 'TotalActivePower', 'divider': 1}
+            # case '135':
+            #     return {'type': 'Frequency', 'divider': 1}
+            case '136':
+                return {'type': 'Temperature', 'divider': 10}
+            case _:
+                return None
 
     def _process(self, data, func=None):
         try:
@@ -39,12 +60,16 @@ class PowerClamp(Device):
                 return
 
             for key, value in data['dps'].items():
+                dp_type = self.__get_dp_type(key)
+                if dp_type is None:
+                    return
+
                 obj = {
                     'name': 'PowerClamp',
                     't': data['t'],
-                    'type': self.__get_dp_type(key),
+                    'type': dp_type['type'],
                     'dp': key,
-                    'value': value
+                    'value': value / dp_type['divider']
                 }
 
                 if func is not None:

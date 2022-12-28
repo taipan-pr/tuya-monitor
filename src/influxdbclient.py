@@ -16,7 +16,7 @@ class InfluxDbClient:
         dt = datetime.datetime.fromtimestamp(data['t'])
         dt_offset = int(os.getenv('TIME_OFFSET_HOUR'))
         local_time = dt.replace(tzinfo=datetime.timezone(datetime.timedelta(hours=dt_offset)))
-        print(local_time)
+        print(f"{local_time} - {data['type']} {data['value']}")
         p = influxdb_client \
             .Point(data['name']) \
             .field(data['type'], data['value']) \
