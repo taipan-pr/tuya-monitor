@@ -1,15 +1,18 @@
-import json
-
-from device import Device
-from datetime import datetime
+import tinytuya
 
 
-class PowerClamp(Device):
+class PowerClamp:
     def __init__(self, device_id, local_key, ip_address):
-        Device.__init__(self, device_id, local_key, ip_address)
+        self.device_id = device_id
+        self.local_key = local_key
+        self.ip_address = ip_address
+        self.device = tinytuya.OutletDevice(device_id, ip_address, local_key)
+        self.device.set_version(3.3)
+        self.is_lost_status = False
+        self.data = None
 
     @staticmethod
-    def __get_dp_type(dp_key):
+    def get_dp_type(dp_key):
         match dp_key:
             case '101':
                 return {'type': 'VoltageA', 'divider': 10}
@@ -47,33 +50,24 @@ class PowerClamp(Device):
                 return {'type': 'TotalCurrent', 'divider': 1000}
             case '133':
                 return {'type': 'TotalActivePower', 'divider': 1}
-            # case '135':
-            #     return {'type': 'Frequency', 'divider': 1}
+            case '135':
+                return {'type': 'Frequency', 'divider': 1}
             case '136':
                 return {'type': 'Temperature', 'divider': 10}
             case _:
                 return None
 
-    def _process(self, data, func=None):
-        try:
-            if 't' not in data or data['dps'] is None:
-                return
+    def power_clamp_data(self):
+        data = self.device.status()
+        if (data is None or
+                'dps' not in data or
+                # check if there's active power in the data if none of them exists returns
+                ('103' not in data['dps'] and '113' not in data['dps'] and '123' not in data['dps'])):
 
-            for key, value in data['dps'].items():
-                dp_type = self.__get_dp_type(key)
-                if dp_type is None:
-                    return
+            if self.data is None:
+                return None
 
-                obj = {
-                    'name': 'PowerClamp',
-                    't': data['t'],
-                    'type': dp_type['type'],
-                    'dp': key,
-                    'value': value / dp_type['divider']
-                }
+            return self.data
 
-                if func is not None:
-                    func(obj)
-
-        except:
-            print('Exception payload: %r' % data)
+        self.data = data
+        return data

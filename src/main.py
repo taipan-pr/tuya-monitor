@@ -1,19 +1,32 @@
-from powerclamp import *
+from powerclamp import PowerClamp
+from process import Process
 import os
+import time
 from dotenv import find_dotenv, load_dotenv
 from influxdbclient import InfluxDbClient
 
+print(f"Process start")
+
+# load environment variables
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
-influxdb = InfluxDbClient(os.getenv("INFLUXDB_URL"), os.getenv("INFLUXDB_TOKEN"), os.getenv("INFLUXDB_ORG"), os.getenv("INFLUXDB_BUCKET"))
-# Power Clamp
-device = PowerClamp(os.getenv("TUYA_DEVICE_ID"), os.getenv("TUYA_LOCAL_KEY"), os.getenv("TUYA_DEVICE_IP"))
-device.listen(influxdb.write)
 
-# from subbreaker import *
-#
-# # Miner Breaker
-# device = SubBreaker('ebc9dede24278b55a2jksk', 'e2b7f60d7d691d3f', '88.87.4.198')
-#
-# # Blower Breaker
-# device = SubBreaker('eb3e19ed3e86b1604c1tot', 'ecb7c936bd157677', '88.87.4.197')
+# create an instance of influx db with the configuration values
+influxdb = InfluxDbClient(os.getenv("INFLUXDB_URL"),
+                          os.getenv("INFLUXDB_TOKEN"),
+                          os.getenv("INFLUXDB_ORG"),
+                          os.getenv("INFLUXDB_BUCKET"))
+
+# create an instance of power clamp device with configuration values
+device = PowerClamp(os.getenv("TUYA_DEVICE_ID"), os.getenv("TUYA_LOCAL_KEY"), os.getenv("TUYA_DEVICE_IP"))
+
+# value for delaying each request
+delay_secs = float(os.getenv("DELAY_SECS"))
+
+process = Process(device, influxdb, delay_secs)
+
+while True:
+    process.process()
+
+    # delay for 'delay_secs' so it doesn't make too many requests
+    time.sleep(delay_secs)
