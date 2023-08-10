@@ -53,12 +53,12 @@ class Process:
         if key == '103' or key == '113' or key == '123':
             kwh = 0.0
             if value > 0.0:
-                kwh = (value * ((self.delay_secs / 60) / 60)) / 1000
+                kwh = (value * ((self.delay_secs / 60) / 60))
 
             obj = {
                 'name': 'PowerClamp',
                 't': date_time,
-                'type': dp_type['type'] + "kWh",
+                'type': dp_type['type'] + "Wh",
                 'dp': key,
                 'value': kwh
             }
