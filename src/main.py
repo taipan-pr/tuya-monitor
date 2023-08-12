@@ -17,10 +17,9 @@ influxdb = InfluxDbClient(os.getenv("INFLUXDB_URL"),
                           os.getenv("INFLUXDB_BUCKET"))
 
 # create an instance of power clamp device with configuration values
-device = PowerClamp(os.getenv("TUYA_DEVICE_ID"), os.getenv("TUYA_LOCAL_KEY"), os.getenv("TUYA_DEVICE_IP"))
 
 # value for delaying each request
 delay_secs = float(os.getenv("DELAY_SECS"))
 
-process = Process(device, influxdb, delay_secs)
-process.process()
+process = Process(influxdb, delay_secs)
+process.start()

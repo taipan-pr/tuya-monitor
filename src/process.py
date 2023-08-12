@@ -1,38 +1,49 @@
 import datetime
+import os
 import tinytuya
+from powerclamp import PowerClamp
 
 
 class Process:
-    def __init__(self, power_clamp, influxdb, delay_secs):
-        self.power_clamp = power_clamp
+    def __init__(self, influxdb, delay_secs):
         self.influxdb = influxdb
         self.delay_secs = delay_secs
 
-    def process(self):
-        self.power_clamp.device.set_socketPersistent(True)
-        print(" > Send Request for Status < ")
-        payload = self.power_clamp.device.generate_payload(tinytuya.DP_QUERY)
-        self.power_clamp.device.send(payload)
-
-        print(" > Begin Monitor Loop <")
+    def start(self):
         while True:
             try:
-                # See if any data is available
-                data = self.power_clamp.device.receive()
-                if 'dps' not in data:
-                    continue
+                device = PowerClamp(os.getenv("TUYA_DEVICE_ID"),
+                                    os.getenv("TUYA_LOCAL_KEY"),
+                                    os.getenv("TUYA_DEVICE_IP"))
+                device.device.set_socketPersistent(True)
+                print(" > Send Request for Status < ")
+                payload = device.device.generate_payload(tinytuya.DP_QUERY)
+                device.device.send(payload)
 
-                for key, value in data['dps'].items():
-                    # process data and value
-                    dt = datetime.datetime.now(tz=datetime.timezone.utc).replace(microsecond=0)
-                    if 't' in data:
-                        dt = datetime.datetime.fromtimestamp(data['t'], tz=datetime.timezone.utc)
-                    self.send_data(dt, key, value)
+                self.process(device)
             except TypeError:
                 print("exception")
 
-    def send_data(self, date_time, key, value):
-        dp_type = self.power_clamp.get_dp_type(key)
+    def process(self, device):
+        print(" > Begin Monitor Loop <")
+        while True:
+            # See if any data is available
+            data = device.device.receive()
+            if 'dps' not in data:
+                continue
+
+            for key, value in data['dps'].items():
+                # process data and value
+                dt = datetime.datetime.now(tz=datetime.timezone.utc).replace(microsecond=0)
+                if 't' in data:
+                    dt = datetime.datetime.fromtimestamp(data['t'], tz=datetime.timezone.utc)
+                self.send_data(dt, key, value, device)
+
+            payload = device.device.generate_payload(tinytuya.HEART_BEAT)
+            device.device.send(payload)
+
+    def send_data(self, date_time, key, value, device):
+        dp_type = device.get_dp_type(key)
         if dp_type is None:
             return
 
