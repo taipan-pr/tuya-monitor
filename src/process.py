@@ -27,6 +27,7 @@ class Process:
                 # See if any data is available
                 data = device.device.status()
                 if 'dps' not in data:
+                    print(f'dps not present - {data}')
                     continue
 
                 dt = datetime.datetime.utcnow()
