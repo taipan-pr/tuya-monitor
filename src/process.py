@@ -1,48 +1,47 @@
 import datetime
 import os
-import tinytuya
+import time
 from powerclamp import PowerClamp
+from influxdbclient import InfluxDbClient
 
 
 class Process:
-    def __init__(self, influxdb, delay_secs):
-        self.influxdb = influxdb
-        self.delay_secs = delay_secs
+    def process(self):
+        # value for delaying each request
+        delay_secs = float(os.getenv("DELAY_SECS"))
 
-    def start(self):
-        while True:
-            try:
-                device = PowerClamp(os.getenv("TUYA_DEVICE_ID"),
-                                    os.getenv("TUYA_LOCAL_KEY"),
-                                    os.getenv("TUYA_DEVICE_IP"))
-                device.device.set_socketPersistent(True)
-                print(" > Send Request for Status < ")
-                payload = device.device.generate_payload(tinytuya.DP_QUERY)
-                device.device.send(payload)
+        # create an instance of power clamp device with configuration values
+        device = PowerClamp(os.getenv("TUYA_DEVICE_ID"),
+                            os.getenv("TUYA_LOCAL_KEY"),
+                            os.getenv("TUYA_DEVICE_IP"))
 
-                self.process(device)
-            except TypeError:
-                print("exception")
+        # create an instance of influx db with the configuration values
+        influxdb = InfluxDbClient(os.getenv("INFLUXDB_URL"),
+                                  os.getenv("INFLUXDB_TOKEN"),
+                                  os.getenv("INFLUXDB_ORG"),
+                                  os.getenv("INFLUXDB_BUCKET"))
 
-    def process(self, device):
         print(" > Begin Monitor Loop <")
-        while True:
-            # See if any data is available
-            data = device.device.receive()
-            if 'dps' not in data:
-                continue
+        try:
+            while True:
+                # See if any data is available
+                data = device.device.status()
+                if 'dps' not in data:
+                    continue
 
-            for key, value in data['dps'].items():
-                # process data and value
-                dt = datetime.datetime.now(tz=datetime.timezone.utc).replace(microsecond=0)
-                if 't' in data:
-                    dt = datetime.datetime.fromtimestamp(data['t'], tz=datetime.timezone.utc)
-                self.send_data(dt, key, value, device)
+                dt = datetime.datetime.utcnow()
+                for key, value in data['dps'].items():
+                    # process data and value
+                    self.send_data(influxdb, dt, key, value, device)
 
-            payload = device.device.generate_payload(tinytuya.HEART_BEAT)
-            device.device.send(payload)
+                time.sleep(delay_secs)
 
-    def send_data(self, date_time, key, value, device):
+        except:
+            device.device.close()
+            raise TypeError("exception")
+
+    @staticmethod
+    def send_data(influxdb, date_time, key, value, device):
         dp_type = device.get_dp_type(key)
         if dp_type is None:
             return
@@ -57,5 +56,6 @@ class Process:
             'dp': key,
             'value': value / dp_type['divider']
         }
-        print(f"{obj['t']} - {obj['type']} {obj['value']}")
-        self.influxdb.write(obj, date_time)
+
+        # print(f"{obj['t']} - {obj['type']} {obj['value']}")
+        influxdb.write(obj, date_time)

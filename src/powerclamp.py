@@ -8,7 +8,6 @@ class PowerClamp:
         self.ip_address = ip_address
         self.device = tinytuya.OutletDevice(device_id, ip_address, local_key)
         self.device.set_version(3.3)
-        self.is_lost_status = False
         self.data = None
 
     @staticmethod
@@ -56,18 +55,3 @@ class PowerClamp:
                 return {'type': 'Temperature', 'divider': 10}
             case _:
                 return None
-
-    def power_clamp_data(self):
-        data = self.device.status()
-        if (data is None or
-                'dps' not in data or
-                # check if there's active power in the data if none of them exists returns
-                ('103' not in data['dps'] and '113' not in data['dps'] and '123' not in data['dps'])):
-
-            if self.data is None:
-                return None
-
-            return self.data
-
-        self.data = data
-        return data
