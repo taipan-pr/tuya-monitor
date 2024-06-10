@@ -6,9 +6,15 @@ class PowerClamp:
         self.device_id = device_id
         self.local_key = local_key
         self.ip_address = ip_address
-        self.device = tinytuya.OutletDevice(device_id, ip_address, local_key)
-        self.device.set_version(3.3)
+        self.device = tinytuya.OutletDevice(
+            dev_id=device_id,
+            address=ip_address,
+            local_key=local_key,
+            version=3.4)
         self.data = None
+        print('ip: ' + ip_address)
+        print('device_id: ' + device_id)
+        print('local_key: ' + local_key)
 
     @staticmethod
     def get_dp_type(dp_key):
